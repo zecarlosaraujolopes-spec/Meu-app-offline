@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="manifest" href="manifest.json">
+<title>IA Magnato V4 - Dev Tutor</title>
+<style>
+:root{--bg:#070a12;--card:#12182a;--acc:#7c3aed;--txt:#e9e5ff;--ok:#10b981;--err:#ef4444}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:ui-monospace,system-ui;padding:8px}
+header{padding:14px;background:linear-gradient(90deg,#12182a,#1e1b4b);border-radius:14px;margin-bottom:10px;border:1px solid #2a2a5a;display:flex;justify-content:space-between;align-items:center}
+.tabs{display:flex;gap:6px;margin-bottom:10px;overflow:auto}
+.tab{padding:10px 12px;border-radius:10px;background:var(--card);text-align:center;cursor:pointer;opacity:.6;font-weight:700;white-space:nowrap;flex:1}
+.tab.active{opacity:1;border:1px solid var(--acc);color:#a78bfa}
+.panel{display:none;background:var(--card);border-radius:14px;padding:12px;min-height:70vh;border:1px solid #1e2540}
+.panel.active{display:block}
+textarea,input{width:100%;background:#0a0e1c;color:#fff;border:1px solid #2a3550;border-radius:10px;padding:12px;margin:6px 0;font-family:ui-monospace;font-size:13px}
+button{background:var(--acc);color:#fff;font-weight:800;border:0;border-radius:10px;padding:12px;cursor:pointer;width:100%;margin-top:8px}
+button.secondary{background:#1e2540;color:#a78bfa}
+.msg{padding:12px 14px;border-radius:12px;margin:8px 0;max-width:95%;line-height:1.5;white-space:pre-wrap;font-size:13px}
+.user{background:#2a2a5a;align-self:flex-end;margin-left:auto}
+.ia{background:#11162a;border:1px solid #2a2a5a}
+#chat{display:flex;flex-direction:column;max-height:62vh;overflow:auto}
+.small{font-size:11px;opacity:.7}
+.progress{height:8px;background:#0a0e1c;border-radius:10px;overflow:hidden;margin:8px 0}
+.progress div{height:100%;background:var(--acc);width:0%;transition:width .3s}
+.codebox{background:#000;padding:10px;border-radius:8px;border-left:3px solid var(--acc);margin:8px 0;overflow:auto}
+.badge{display:inline-block;background:#1e2540;border-radius:6px;padding:3px 8px;font-size:11px;margin:2px;border:1px solid #2a2a5a}
+.ok{color:var(--ok)} .err{color:var(--err)}
+#log{background:#000;color:#a78bfa;font-family:monospace;font-size:10px;padding:8px;border-radius:8px;max-height:100px;overflow:auto}
+</style>
+</head>
+<body>
+<header>
+  <div><b>IA MAGNATO V4</b> <span class="badge">DEV TUTOR</span><br><span class="small">Programação • PWA • Offline • S23 Ultra</span></div>
+  <div id="status" class="small">iniciando motor dev...</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="openTab('chat')">Chat Dev</div>
+  <div class="tab" onclick="openTab('analise')">Analisar Código</div>
+  <div class="tab" onclick="openTab('ensinar')">Ensinar</div>
+  <div class="tab" onclick="openTab('cerebro')">Cérebro Dev</div>
+</div>
+
+<div id="p-chat" class="panel active">
+  <div id="log">> Carregando tutor de programação local...</div>
+  <div class="progress"><div id="bar"></div></div>
+  <div id="chat"></div>
+  <input id="q" placeholder="Ex: onde boto o index.html? meu manifest tá errado? como renomear icone?" onkeydown="if(event.key==='Enter')perguntar()">
+  <button onclick="perguntar()" id="btnPerg">Carregando tutor...</button>
+</div>
+
+<div id="p-analise" class="panel">
+  <h3>🔍 Analisador de Projeto (com sua permissão)</h3>
+  <p class="small">Cole seu código aqui ou selecione seus arquivos do GitHub. Eu vou dizer onde tá errado e onde bota cada coisa. Nada é enviado pra internet, tudo roda aqui.</p>
+  <label class="small">Cole seu index.html / manifest.json / sw.js:</label>
+  <textarea id="codeInput" rows="10" placeholder="Cole aqui o código que tá dando erro..."></textarea>
+  <button onclick="analisarCodigo()">Analisar com IA Local</button>
+  <div id="analiseResult" style="margin-top:10px"></div>
+  
+  <h3 style="margin-top:16px">📁 Verificação de Estrutura</h3>
+  <div id="estruturaCheck" style="background:#0a0e1c;padding:10px;border-radius:8px">
+    <div>✔️ <b>index.html</b> - tem que estar na raiz</div>
+    <div>✔️ <b>manifest.json</b> - na raiz, com icons 192 e 512</div>
+    <div>✔️ <b>sw.js</b> - na raiz</div>
+    <div>✔️ <b>icon-192.png</b> e <b>icon-512.png</b> - nomes exatos, sem números</div>
+  </div>
+  <button class="secondary" onclick="gerarChecklist()">Gerar checklist do meu repo</button>
+</div>
+
+<div id="p-ensinar" class="panel">
+  <h3>📚 Ensinar Programação pra IA (com permissão)</h3>
+  <p class="small">Essa IA aprende, mas SÓ com sua permissão. Tudo que você ensinar fica salvo local. Ela pode se autoatualizar se você permitir.</p>
+  <textarea id="txtEnsinar" rows="4" placeholder="Ex: Sempre que o GitHub renomear icone para números, tem que renomear na galeria antes de upar. O sw.js tem que estar na raiz junto com index.html"></textarea>
+  <button onclick="ensinarTexto()">Ensinar regra de programação</button>
+  
+  <label class="small" style="margin-top:12px">Importar conhecimento.html (ex: tutoriais seus)</label>
+  <input type="file" accept=".html,.txt,.json" onchange="lerArquivo(this)">
+  <textarea id="htmlBase" rows="8"><conhecimento>
+<p>index.html sempre na raiz do repositório GitHub</p>
+<p>manifest.json precisa ter name, short_name, start_url, display standalone, icons 192x192 e 512x512</p>
+<p>sw.js é o service worker, precisa estar na raiz para funcionar offline</p>
+<p>icon-192.png e icon-512.png precisam ter nome exato, sem números aleatórios do GitHub</p>
+<p>Para renomear imagem no celular, usar Meus Arquivos, segurar e renomear antes de upar</p>
+<p>GitHub Pages: Settings > Pages > Branch main > root > Save</p>
+<p>PWABuilder verifica se tem manifest e service worker</p>
+</conhecimento></textarea>
+  <button onclick="ensinarHTML()">Ler HTML de conhecimento</button>
+
+  <div style="margin-top:16px;padding:10px;background:#1a1030;border-radius:10px;border:1px dashed #7c3aed">
+    <label><input type="checkbox" id="permAuto"> Permitir autoatualização com sua permissão</label>
+    <p class="small">Se marcado, quando você ensinar algo novo, a IA vai sugerir melhorar o código dela mesma, mas sempre pedindo seu OK antes.</p>
+  </div>
+</div>
+
+<div id="p-cerebro" class="panel">
+  <h3>Cérebro Dev - Conexões que ele aprendeu</h3>
+  <div id="memList"></div>
+  <button onclick="exportar()">Exportar conhecimento-dev.json</button>
+  <button class="secondary" onclick="if(confirm('Apagar cérebro?')){base=[];localStorage.removeItem('ia_magnato_v4');renderMem();}">Apagar cérebro</button>
+</div>
+
+<script type="module">
+import * as webllm from "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/lib/index.js";
+
+let base = JSON.parse(localStorage.getItem('ia_magnato_v4')||'[]');
+if(base.length===0){
+  // BASE INICIAL DE PROGRAMAÇÃO - o que eu te ensinei
+  base = [
+    {sujeito:"index.html", relacao:"deve ficar", objeto:"na raiz do repositório", origem:"Base inicial PWA"},
+    {sujeito:"manifest.json", relacao:"precisa ter", objeto:"name, short_name, icons 192 e 512, start_url, display standalone", origem:"Base inicial PWA"},
+    {sujeito:"sw.js", relacao:"é", objeto:"service worker para funcionar offline, deve estar na raiz", origem:"Base inicial PWA"},
+    {sujeito:"icon-192.png e icon-512.png", relacao:"precisam ter", objeto:"nome exato sem números aleatórios", origem:"Base inicial - erro comum GitHub"},
+    {sujeito:"GitHub renomear com números", relacao:"solução", objeto:"renomear na galeria Meus Arquivos antes de upar", origem:"Base inicial - aprendizado Carlinhos"},
+    {sujeito:"GitHub Pages", relacao:"ativa em", objeto:"Settings > Pages > Branch main / (root) > Save", origem:"Base inicial"},
+    {sujeito:"PWABuilder", relacao:"verifica", objeto:"manifest e service worker", origem:"Base inicial"},
+    {sujeito:"IA Magnato", relacao:"é", objeto:"100% offline, privada, sem anúncios, sem vírus", origem:"Base inicial"},
+  ];
+  localStorage.setItem('ia_magnato_v4', JSON.stringify(base));
+}
+
+let engine;
+let chatHistory = [];
+const MODEL = "Phi-3-mini-4k-instruct-q4f16_1-MLC";
+
+async function init(){
+  const logEl=document.getElementById('log'), bar=document.getElementById('bar'), btn=document.getElementById('btnPerg'), status=document.getElementById('status');
+  try{
+    logEl.innerText="> Baixando cérebro Dev (Phi-3) - 1ª vez ~2GB no Wi-Fi...";
+    engine = await webllm.CreateMLCEngine(MODEL, {
+      initProgressCallback:(p)=>{
+        logEl.innerText=`[${Math.round(p.progress*100)}%] ${p.text}`;
+        bar.style.width=(p.progress*100)+"%";
+        status.innerText=Math.round(p.progress*100)+"% carregando";
+      }
+    });
+    logEl.innerText="> TUTOR DEV PRONTO! Offline no S23 Ultra.";
+    bar.style.width="100%"; status.innerText="Dev Tutor Online • Offline"; btn.innerText="Perguntar pro Tutor Dev";
+    addMsg("Fala Carlinhos! Sou sua IA Dev Tutor V4. Já sei tudo que a gente fez: index, manifest, sw.js, icons, GitHub Pages, renomear na galeria. Pode perguntar onde bota o index, onde tá errado, que eu vou te orientar. E se você me ensinar algo novo na aba Ensinar, eu aprendo com sua permissão.","ia");
+  }catch(e){ logEl.innerText+="\n> Erro: "+e.message; }
+}
+init();
+
+function buildContext(){
+  return base.map(b=> `- ${b.sujeito} ${b.relacao} ${b.objeto} [${b.origem}]`).join("\n");
+}
+
+window.perguntar = async function(){
+  let input=document.getElementById('q'); let txt=input.value.trim(); if(!txt) return;
+  addMsg(txt,'user'); input.value='';
+  if(!engine){ addMsg("Ainda carregando... aguarda 100%","ia"); return; }
+  let contexto=buildContext();
+  let systemPrompt=`Você é a IA Magnato V4 - TUTOR DE PROGRAMAÇÃO do Carlinhos Magnato.
+Você roda 100% offline no S23 Ultra dele. Você é especialista em PWA, HTML, manifest.json, sw.js, GitHub Pages.
+
+BASE DE CONHECIMENTO QUE O CARLINHOS TE ENSINOU (use sempre):
+${contexto}
+
+REGRAS:
+1. Seja tutor: explique onde está errado, onde bota cada arquivo, por que o erro aconteceu.
+2. Nunca repita a frase do usuário. Responda direto, prático, passo a passo.
+3. Se ele perguntar "onde bota o index?" responda: na raiz, junto com manifest, sw.js e icons.
+4. Se manifest ou sw não funcionar, diga como verificar: nome exato, na raiz, GitHub Pages ativado.
+5. Se ele quiser autoaprendizagem, explique que você aprende na aba Ensinar, e só se autoatualiza se ele marcar a permissão.
+6. Fale em português BR, informal, amigo, mas técnico quando precisa. Use exemplos de código curtos.
+7. Sempre que possível, dê o caminho certo: Meus Arquivos > renomear > upar.
+`;
+  try{
+    document.getElementById('status').innerText="analisando...";
+    const reply = await engine.chat.completions.create({
+      messages:[{role:"system", content:systemPrompt}, ...chatHistory.slice(-6), {role:"user", content:txt}],
+      temperature:0.5, max_tokens:400
+    });
+    let ans=reply.choices[0].message.content;
+    addMsg(ans,'ia'); chatHistory.push({role:"user", content:txt},{role:"assistant", content:ans});
+    document.getElementById('status').innerText="Dev Tutor Online • Offline";
+    
+    // autoatualização com permissão
+    if(document.getElementById('permAuto')?.checked && ans.toLowerCase().includes('aprender')){
+      setTimeout(()=>{ if(confirm('A IA quer aprender isso: "'+txt+'". Permitir que ela grave no cérebro?')){ window.aprender(txt); } },500);
+    }
+  }catch(e){ addMsg("Erro: "+e.message,"ia"); }
+}
+
+window.analisarCodigo = async function(){
+  let code=document.getElementById('codeInput').value.trim(); if(!code){ alert('Cole o código primeiro'); return; }
+  let resEl=document.getElementById('analiseResult');
+  resEl.innerHTML='<span class="small">Analisando localmente...</span>';
+  
+  // análise rápida offline sem IA também
+  let erros=[];
+  if(code.includes('icon') && /\d{6,}/.test(code)) erros.push('❌ Nome de ícone com números aleatórios (ex: 82233...). Renomeie para icon-192.png ou icon-512.png na galeria.');
+  if(!code.includes('manifest') && code.includes('index.html')) erros.push('⚠️ Seu index.html não está chamando o manifest.json. Verifique <link rel="manifest" href="manifest.json">');
+  if(code.includes('manifest.json') && !code.includes('192')) erros.push('⚠️ manifest.json precisa ter icon 192x192 e 512x512');
+  
+  let contexto=buildContext();
+  let prompt=`Você é um linter de PWA. Analise esse código e diga onde está errado e onde bota cada arquivo. Base: ${contexto}\n\nCódigo do usuário:\n${code.slice(0,3000)}`;
+  
+  try{
+    if(engine){
+      const reply=await engine.chat.completions.create({messages:[{role:"system", content:"Você é tutor de PWA. Analise erros e diga onde colocar cada arquivo."},{role:"user", content:prompt}], temperature:0.3, max_tokens:350});
+      resEl.innerHTML=`<div class="codebox">${erros.join('<br>')}<br><br><b>IA Dev:</b><br>${reply.choices[0].message.content.replace(/\n/g,'<br>')}</div>`;
+    }else{
+      resEl.innerHTML=`<div class="codebox">${erros.join('<br>')||'✅ Nenhum erro óbvio encontrado'}</div>`;
+    }
+  }catch(e){ resEl.innerHTML='<span class="err">Erro: '+e.message+'</span>'; }
+}
+
+window.aprender=function(frase){
+  let orig=frase.trim(); if(!orig) return;
+  let f=orig.toLowerCase(); let s='conceito', r='é', o=orig;
+  if(f.includes('index.html')){ s='index.html'; r='deve ficar'; o=orig; }
+  else if(f.includes('manifest')){ s='manifest.json'; r='regra'; o=orig; }
+  else if(f.includes('sw.js')||f.includes('service worker')){ s='sw.js'; r='regra'; o=orig; }
+  base.push({sujeito:s, relacao:r, objeto:o, origem:orig});
+  localStorage.setItem('ia_magnato_v4', JSON.stringify(base)); renderMem();
+}
+window.ensinarTexto=function(){ let t=document.getElementById('txtEnsinar').value; t.split(/[.\n]+/).forEach(f=>{ if(f.trim().length>3) window.aprender(f); }); document.getElementById('txtEnsinar').value=''; alert('Regra de programação aprendida! '+base.length+' conexões'); }
+window.ensinarHTML=function(){ let html=document.getElementById('htmlBase').value; let div=document.createElement('div'); div.innerHTML=html; div.querySelectorAll('p, li').forEach(el=>{ if(el.textContent.trim()) window.aprender(el.textContent); }); alert('HTML de conhecimento aprendido!'); }
+window.lerArquivo=function(input){ let file=input.files[0]; if(!file) return; let reader=new FileReader(); reader.onload=e=>{ let conteudo=e.target.result; let div=document.createElement('div'); div.innerHTML=conteudo; div.textContent.split(/[.\n]+/).forEach(t=>{ if(t.trim().length>3) window.aprender(t); }); alert('Arquivo dev aprendido!'); }; reader.readAsText(file); }
+window.renderMem=function(){ let el=document.getElementById('memList'); el.innerHTML=''; base.slice(-100).reverse().forEach(b=>{ let d=document.createElement('div'); d.style.cssText='background:#0a0e1c;padding:8px;border-radius:8px;margin:4px 0;font-size:12px'; d.innerHTML=`<b>${b.sujeito}</b> → ${b.relacao} → <b>${b.objeto}</b><br><span style="opacity:.6">${b.origem}</span>`; el.appendChild(d); }); document.getElementById('status').innerText=base.length+' conexões dev'; }
+window.exportar=function(){ let blob=new Blob([JSON.stringify(base,null,2)],{type:'application/json'}); let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='conhecimento-dev.json'; a.click(); }
+window.openTab=function(t){ document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active')); document.querySelectorAll('.panel').forEach(e=>e.classList.remove('active')); document.getElementById('p-'+t).classList.add('active'); event.target.classList.add('active'); if(t==='cerebro') renderMem(); }
+window.addMsg=function(t,c){ let d=document.createElement('div'); d.className='msg '+c; d.innerText=t; document.getElementById('chat').appendChild(d); document.getElementById('chat').scrollTop=9999; }
+window.gerarChecklist=function(){ let html=`<div class="codebox"><b>Checklist do seu repositório (tem que ter isso na raiz):</b><br>✅ index.html<br>✅ manifest.json (com icons 192 e 512)<br>✅ sw.js<br>✅ icon-192.png (nome exato)<br>✅ icon-512.png (nome exato)<br><br>Ativar Pages: Settings > Pages > main > / (root) > Save<br>Testar: PWABuilder.com</div>`; document.getElementById('analiseResult').innerHTML=html; }
+renderMem();
+</script>
+</body>
+</html>
